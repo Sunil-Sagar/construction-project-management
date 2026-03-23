@@ -1,7 +1,5 @@
-const { neon } = require('@neondatabase/serverless');
-
-// Get connection string from environment variable
-const sql = neon(process.env.DATABASE_URL || '');
+// Import the shared Neon SQL instance
+const sql = require('./database-postgres');
 
 // Compatibility wrapper to make Neon work like SQLite's callback API
 const db = {
