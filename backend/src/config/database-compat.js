@@ -7,6 +7,12 @@ const sql = neon(process.env.DATABASE_URL || '');
 const db = {
   // Execute query and return all rows (like SQLite's db.all)
   all: async function(query, params, callback) {
+    // Handle optional params: db.all(query, callback) or db.all(query, params, callback)
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+    
     try {
       // Convert ? placeholders to $1, $2, etc for PostgreSQL
       let paramIndex = 0;
@@ -21,6 +27,12 @@ const db = {
 
   // Execute query and return first row (like SQLite's db.get)
   get: async function(query, params, callback) {
+    // Handle optional params: db.get(query, callback) or db.get(query, params, callback)
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+    
     try {
       let paramIndex = 0;
       const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
@@ -34,6 +46,12 @@ const db = {
 
   // Execute query without returning rows (like SQLite's db.run)
   run: async function(query, params, callback) {
+    // Handle optional params: db.run(query, callback) or db.run(query, params, callback)
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+    
     try {
       let paramIndex = 0;
       let pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
