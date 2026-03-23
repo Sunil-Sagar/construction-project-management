@@ -16,10 +16,10 @@ const db = {
       let paramIndex = 0;
       const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
       
-      // Call Neon SQL: sql(query, params)
-      const result = await sql(pgQuery, params || []);
+      // Neon requires sql.query() for parameterized queries
+      const result = await sql.query(pgQuery, params || []);
       
-      callback(null, result);
+      callback(null, result.rows || result);
     } catch (error) {
       console.error('Database query error (all):', error);
       callback(error, null);
@@ -38,9 +38,10 @@ const db = {
       let paramIndex = 0;
       const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
       
-      const result = await sql(pgQuery, params || []);
+      const result = await sql.query(pgQuery, params || []);
+      const rows = result.rows || result;
       
-      callback(null, result[0] || null);
+      callback(null, rows[0] || null);
     } catch (error) {
       console.error('Database query error (get):', error);
       callback(error, null);
@@ -64,12 +65,13 @@ const db = {
         pgQuery += ' RETURNING id';
       }
       
-      const result = await sql(pgQuery, params || []);
+      const result = await sql.query(pgQuery, params || []);
+      const rows = result.rows || result;
       
       // Simulate SQLite's this context with lastID and changes
       const context = {
-        lastID: result[0]?.id || null,
-        changes: result.length || (result.count !== undefined ? result.count : 1)
+        lastID: rows[0]?.id || null,
+        changes: rows.length || (result.rowCount !== undefined ? result.rowCount : 1)
       };
       
       if (callback) {
@@ -115,11 +117,12 @@ const db = {
             }
           }
           
-          const result = await sql(pgQuery, params || []);
+          const result = await sql.query(pgQuery, params || []);
+          const rows = result.rows || result;
           
           const context = {
-            lastID: result[0]?.id || null,
-            changes: result.length || (result.count !== undefined ? result.count : 1)
+            lastID: rows[0]?.id || null,
+            changes: rows.length || (result.rowCount !== undefined ? result.rowCount : 1)
           };
           
           if (callback) {
