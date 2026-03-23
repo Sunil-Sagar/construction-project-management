@@ -30,8 +30,17 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Initialize database
-require('./config/initDatabase');
+// Initialize database (PostgreSQL in production, SQLite local)
+if (process.env.DATABASE_URL) {
+  // Use PostgreSQL (Neon) in production
+  const { initPostgresDatabase } = require('./config/initDatabase-postgres');
+  initPostgresDatabase().catch(err => {
+    console.error('Failed to initialize PostgreSQL:', err);
+  });
+} else {
+  // Use SQLite for local development
+  require('./config/initDatabase');
+}
 
 // Import routes
 const sitesRoutes = require('./routes/sites');
