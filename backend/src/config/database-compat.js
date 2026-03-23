@@ -18,13 +18,12 @@ const db = {
       let paramIndex = 0;
       const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
       
-      // Neon requires using sql as a tagged template OR sql(query, params, options)
-      // Use the HTTP fetch API style: sql(query, params, options)
-      const result = await sql(pgQuery, params || [], { fullResults: false });
+      // Call Neon SQL: sql(query, params)
+      const result = await sql(pgQuery, params || []);
       
       callback(null, result);
     } catch (error) {
-      console.error('Database query error:', error);
+      console.error('Database query error (all):', error);
       callback(error, null);
     }
   },
@@ -41,11 +40,11 @@ const db = {
       let paramIndex = 0;
       const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
       
-      const result = await sql(pgQuery, params || [], { fullResults: false });
+      const result = await sql(pgQuery, params || []);
       
       callback(null, result[0] || null);
     } catch (error) {
-      console.error('Database query error:', error);
+      console.error('Database query error (get):', error);
       callback(error, null);
     }
   },
@@ -67,7 +66,7 @@ const db = {
         pgQuery += ' RETURNING id';
       }
       
-      const result = await sql(pgQuery, params || [], { fullResults: false });
+      const result = await sql(pgQuery, params || []);
       
       // Simulate SQLite's this context with lastID and changes
       const context = {
@@ -79,7 +78,7 @@ const db = {
         callback.call(context, null);
       }
     } catch (error) {
-      console.error('Database query error:', error);
+      console.error('Database query error (run):', error);
       if (callback) {
         callback.call({}, error);
       }
@@ -118,7 +117,7 @@ const db = {
             }
           }
           
-          const result = await sql(pgQuery, params || [], { fullResults: false });
+          const result = await sql(pgQuery, params || []);
           
           const context = {
             lastID: result[0]?.id || null,
