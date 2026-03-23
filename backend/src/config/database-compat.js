@@ -61,6 +61,61 @@ const db = {
     }
   },
 
+  // Serialize method for sequential execution (SQLite compatibility)
+  serialize: function(callback) {
+    // In PostgreSQL, just execute the callback immediately
+    // Queries are already sequential within a callback chain
+    if (callback) callback();
+  },
+
+  // Prepare statement for batch operations (SQLite compatibility)
+  prepare: function(query) {
+    return {
+      run: async function(params, callback) {
+        try {
+          let paramIndex = 0;
+          let pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
+          
+          // Add RETURNING id for INSERT queries
+          if (pgQuery.toUpperCase().trim().startsWith('INSERT')) {
+            // Remove OR IGNORE if present (not standard PostgreSQL)
+            pgQuery = pgQuery.replace(/INSERT OR IGNORE/i, 'INSERT');
+            
+            // Add RETURNING id if not already present
+            if (!pgQuery.toUpperCase().includes('RETURNING')) {
+              pgQuery += ' RETURNING id';
+            }
+            
+            // Add ON CONFLICT DO NOTHING for OR IGNORE behavior
+            if (query.toUpperCase().includes('OR IGNORE')) {
+              const returningPos = pgQuery.toUpperCase().indexOf('RETURNING');
+              pgQuery = pgQuery.substring(0, returningPos) + 'ON CONFLICT DO NOTHING ' + pgQuery.substring(returningPos);
+            }
+          }
+          
+          const result = await sql(pgQuery, params || []);
+          
+          const context = {
+            lastID: result[0]?.id || null,
+            changes: result.length || (result.count !== undefined ? result.count : 1)
+          };
+          
+          if (callback) {
+            callback.call(context, null);
+          }
+        } catch (error) {
+          if (callback) {
+            callback.call({}, error);
+          }
+        }
+      },
+      finalize: function(callback) {
+        // No cleanup needed for Neon, just call callback
+        if (callback) callback(null);
+      }
+    };
+  },
+
   // Direct SQL access for complex queries
   sql: sql
 };
