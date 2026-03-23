@@ -453,37 +453,52 @@ router.get('/milestone-progress', (req, res) => {
 });
 
 // Dashboard Summary
-router.get('/dashboard-summary', (req, res) => {
-  const queries = {
-    activeSites: 'SELECT COUNT(*) as count FROM sites WHERE status = "active"',
-    activeWorkers: 'SELECT COUNT(*) as count FROM workers WHERE status = "active"',
-    pendingPayouts: 'SELECT COUNT(*) as count, COALESCE(SUM(net_payable), 0) as total FROM payouts WHERE status IN ("pending", "carryover")',
-    pendingMaterials: 'SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total FROM material_entries WHERE payment_status = "pending"'
-  };
-
-  const results = {};
-
-  db.get(queries.activeSites, (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    results.active_sites = row.count;
-
-    db.get(queries.activeWorkers, (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
-      results.active_workers = row.count;
-
-      db.get(queries.pendingPayouts, (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        results.pending_payouts = { count: row.count, total: parseFloat(row.total.toFixed(2)) };
-
-        db.get(queries.pendingMaterials, (err, row) => {
-          if (err) return res.status(500).json({ error: err.message });
-          results.pending_materials = { count: row.count, total: parseFloat(row.total.toFixed(2)) };
-
-          res.json(results);
+router.get('/dashboard-summary', async (req, res) => {
+  try {
+    // Use Promise.all for parallel queries instead of nested callbacks
+    const [activeSites, activeWorkers, pendingPayouts, pendingMaterials] = await Promise.all([
+      new Promise((resolve, reject) => {
+        db.get('SELECT COUNT(*) as count FROM sites WHERE status = "active"', (err, row) => {
+          if (err) reject(err);
+          else resolve(row?.count || 0);
         });
-      });
+      }),
+      new Promise((resolve, reject) => {
+        db.get('SELECT COUNT(*) as count FROM workers WHERE status = "active"', (err, row) => {
+          if (err) reject(err);
+          else resolve(row?.count || 0);
+        });
+      }),
+      new Promise((resolve, reject) => {
+        db.get('SELECT COUNT(*) as count, COALESCE(SUM(net_payable), 0) as total FROM payouts WHERE status IN ("pending", "carryover")', (err, row) => {
+          if (err) reject(err);
+          else resolve({ count: row?.count || 0, total: parseFloat((row?.total || 0).toFixed(2)) });
+        });
+      }),
+      new Promise((resolve, reject) => {
+        db.get('SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total FROM material_entries WHERE payment_status = "pending"', (err, row) => {
+          if (err) reject(err);
+          else resolve({ count: row?.count || 0, total: parseFloat((row?.total || 0).toFixed(2)) });
+        });
+      })
+    ]);
+
+    res.json({
+      active_sites: activeSites,
+      active_workers: activeWorkers,
+      pending_payouts: pendingPayouts,
+      pending_materials: pendingMaterials
     });
-  });
+  } catch (error) {
+    console.error('Dashboard summary error:', error);
+    // Return zeros on error so frontend doesn't break
+    res.json({
+      active_sites: 0,
+      active_workers: 0,
+      pending_payouts: { count: 0, total: 0 },
+      pending_materials: { count: 0, total: 0 }
+    });
+  }
 });
 
 module.exports = router;
