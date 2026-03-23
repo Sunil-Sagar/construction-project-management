@@ -18,9 +18,14 @@ const db = {
       let paramIndex = 0;
       const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
       
-      const result = await sql(pgQuery, params || []);
+      // Call Neon SQL - if no params, just pass query, otherwise pass query and params
+      const result = params && params.length > 0 
+        ? await sql(pgQuery, params)
+        : await sql(pgQuery);
+      
       callback(null, result);
     } catch (error) {
+      console.error('Database query error:', error);
       callback(error, null);
     }
   },
@@ -37,9 +42,14 @@ const db = {
       let paramIndex = 0;
       const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
       
-      const result = await sql(pgQuery, params || []);
+      // Call Neon SQL - if no params, just pass query, otherwise pass query and params
+      const result = params && params.length > 0 
+        ? await sql(pgQuery, params)
+        : await sql(pgQuery);
+      
       callback(null, result[0] || null);
     } catch (error) {
+      console.error('Database query error:', error);
       callback(error, null);
     }
   },
@@ -61,7 +71,10 @@ const db = {
         pgQuery += ' RETURNING id';
       }
       
-      const result = await sql(pgQuery, params || []);
+      // Call Neon SQL - if no params, just pass query, otherwise pass query and params
+      const result = params && params.length > 0 
+        ? await sql(pgQuery, params)
+        : await sql(pgQuery);
       
       // Simulate SQLite's this context with lastID and changes
       const context = {
@@ -73,6 +86,7 @@ const db = {
         callback.call(context, null);
       }
     } catch (error) {
+      console.error('Database query error:', error);
       if (callback) {
         callback.call({}, error);
       }
@@ -111,7 +125,10 @@ const db = {
             }
           }
           
-          const result = await sql(pgQuery, params || []);
+          // Call Neon SQL - if no params, just pass query, otherwise pass query and params
+          const result = params && params.length > 0 
+            ? await sql(pgQuery, params)
+            : await sql(pgQuery);
           
           const context = {
             lastID: result[0]?.id || null,
@@ -122,6 +139,7 @@ const db = {
             callback.call(context, null);
           }
         } catch (error) {
+          console.error('Database query error (prepare):', error);
           if (callback) {
             callback.call({}, error);
           }
