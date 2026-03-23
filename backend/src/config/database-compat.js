@@ -18,10 +18,9 @@ const db = {
       let paramIndex = 0;
       const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
       
-      // Call Neon SQL - if no params, just pass query, otherwise pass query and params
-      const result = params && params.length > 0 
-        ? await sql(pgQuery, params)
-        : await sql(pgQuery);
+      // Neon requires using sql as a tagged template OR sql(query, params, options)
+      // Use the HTTP fetch API style: sql(query, params, options)
+      const result = await sql(pgQuery, params || [], { fullResults: false });
       
       callback(null, result);
     } catch (error) {
@@ -42,10 +41,7 @@ const db = {
       let paramIndex = 0;
       const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
       
-      // Call Neon SQL - if no params, just pass query, otherwise pass query and params
-      const result = params && params.length > 0 
-        ? await sql(pgQuery, params)
-        : await sql(pgQuery);
+      const result = await sql(pgQuery, params || [], { fullResults: false });
       
       callback(null, result[0] || null);
     } catch (error) {
@@ -71,10 +67,7 @@ const db = {
         pgQuery += ' RETURNING id';
       }
       
-      // Call Neon SQL - if no params, just pass query, otherwise pass query and params
-      const result = params && params.length > 0 
-        ? await sql(pgQuery, params)
-        : await sql(pgQuery);
+      const result = await sql(pgQuery, params || [], { fullResults: false });
       
       // Simulate SQLite's this context with lastID and changes
       const context = {
@@ -125,10 +118,7 @@ const db = {
             }
           }
           
-          // Call Neon SQL - if no params, just pass query, otherwise pass query and params
-          const result = params && params.length > 0 
-            ? await sql(pgQuery, params)
-            : await sql(pgQuery);
+          const result = await sql(pgQuery, params || [], { fullResults: false });
           
           const context = {
             lastID: result[0]?.id || null,

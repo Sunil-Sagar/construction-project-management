@@ -4,10 +4,17 @@ const db = require('../config/database');
 
 // Get all sites
 router.get('/', (req, res) => {
+  console.log('GET /api/sites - Fetching all sites');
   db.all('SELECT * FROM sites ORDER BY created_at DESC', [], (err, rows) => {
     if (err) {
-      return res.status(500).json({ error: err.message });
+      console.error('Error fetching sites:', err);
+      return res.status(500).json({ 
+        error: err.message,
+        details: err.toString(),
+        stack: err.stack 
+      });
     }
+    console.log(`Fetched ${rows ? rows.length : 0} sites`);
     res.json(rows);
   });
 });
