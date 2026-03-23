@@ -36,14 +36,19 @@ const db = {
   run: async function(query, params, callback) {
     try {
       let paramIndex = 0;
-      const pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
+      let pgQuery = query.replace(/\?/g, () => `$${++paramIndex}`);
+      
+      // Add RETURNING id for INSERT queries to get lastID
+      if (pgQuery.toUpperCase().trim().startsWith('INSERT')) {
+        pgQuery += ' RETURNING id';
+      }
       
       const result = await sql(pgQuery, params || []);
       
       // Simulate SQLite's this context with lastID and changes
       const context = {
         lastID: result[0]?.id || null,
-        changes: result.length
+        changes: result.length || (result.count !== undefined ? result.count : 1)
       };
       
       if (callback) {

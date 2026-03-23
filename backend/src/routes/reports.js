@@ -458,25 +458,25 @@ router.get('/dashboard-summary', async (req, res) => {
     // Use Promise.all for parallel queries instead of nested callbacks
     const [activeSites, activeWorkers, pendingPayouts, pendingMaterials] = await Promise.all([
       new Promise((resolve, reject) => {
-        db.get('SELECT COUNT(*) as count FROM sites WHERE status = "active"', (err, row) => {
+        db.get('SELECT COUNT(*) as count FROM sites WHERE status = \'active\'', (err, row) => {
           if (err) reject(err);
           else resolve(row?.count || 0);
         });
       }),
       new Promise((resolve, reject) => {
-        db.get('SELECT COUNT(*) as count FROM workers WHERE status = "active"', (err, row) => {
+        db.get('SELECT COUNT(*) as count FROM workers WHERE status = \'active\'', (err, row) => {
           if (err) reject(err);
           else resolve(row?.count || 0);
         });
       }),
       new Promise((resolve, reject) => {
-        db.get('SELECT COUNT(*) as count, COALESCE(SUM(net_payable), 0) as total FROM payouts WHERE status IN ("pending", "carryover")', (err, row) => {
+        db.get('SELECT COUNT(*) as count, COALESCE(SUM(net_payable), 0) as total FROM payouts WHERE status IN (\'pending\', \'carryover\')', (err, row) => {
           if (err) reject(err);
           else resolve({ count: row?.count || 0, total: parseFloat((row?.total || 0).toFixed(2)) });
         });
       }),
       new Promise((resolve, reject) => {
-        db.get('SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total FROM material_entries WHERE payment_status = "pending"', (err, row) => {
+        db.get('SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total FROM material_entries WHERE payment_status = \'pending\'', (err, row) => {
           if (err) reject(err);
           else resolve({ count: row?.count || 0, total: parseFloat((row?.total || 0).toFixed(2)) });
         });
