@@ -30,17 +30,40 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Database initialization promise
+let dbInitialized = false;
+let dbInitPromise = null;
+
 // Initialize database (PostgreSQL in production, SQLite local)
 if (process.env.DATABASE_URL) {
   // Use PostgreSQL (Neon) in production
   const { initPostgresDatabase } = require('./config/initDatabase-postgres');
-  initPostgresDatabase().catch(err => {
-    console.error('Failed to initialize PostgreSQL:', err);
-  });
+  dbInitPromise = initPostgresDatabase()
+    .then(() => {
+      dbInitialized = true;
+      console.log('PostgreSQL database initialized successfully');
+    })
+    .catch(err => {
+      console.error('Failed to initialize PostgreSQL:', err);
+      throw err;
+    });
 } else {
   // Use SQLite for local development
   require('./config/initDatabase');
+  dbInitialized = true;
 }
+
+// Middleware to ensure database is ready before handling requests
+app.use(async (req, res, next) => {
+  if (!dbInitialized && dbInitPromise) {
+    try {
+      await dbInitPromise;
+    } catch (err) {
+      return res.status(503).json({ error: 'Database initialization failed' });
+    }
+  }
+  next();
+});
 
 // Import routes
 const sitesRoutes = require('./routes/sites');
