@@ -1,0 +1,54 @@
+Project Blueprint: Multi-Site Civil Contractor Management System
+1. Core Objective
+To build a high-efficiency internal "Command Center" application (optimized for Laptop/Browser) that replaces manual Google Sheet entries. The system must manage labor attendance, variable wage calculations, multi-site material expenses, and project milestones, providing "on-demand" reporting for senior stakeholders.
+
+2. Labor & Wage Logic (The "Saturday Settlement")
+Cycle: Strict Sunday-to-Saturday work week.
+
+Payments: Every Saturday evening.
+
+Wage Calculation: * Base: Daily Rate (from a Master Rate Card) $\times$ Attendance (1.0 or 0.5).
+
+Overtime (OT): Calculated in Hours at a flat hourly rate (e.g., ₹100/hr), not as a fraction of the daily wage.
+
+Total Formula: $(Days \times Rate) + (OT\ Hours \times OT\ Rate) - Advances = Net\ Payable$.
+
+Variable Rates: Rates are individual-specific. If a rate is updated mid-week, the app must apply the old rate to days already worked and the new rate to future days.
+
+Carryover: If a worker is absent on Saturday, their "Net Payable" remains as a balance to be collected on any subsequent day (Monday, Tuesday, etc.), but the "Work Week" itself closes on Saturday.
+
+3. Multi-Site & Global Movement
+Global Labor Pool: A single master list of all workers (Masons/Labors/Mestris).
+
+Site Switching: Workers can move between different construction sites. The app must track which site a worker was at on a specific day to ensure costs are allocated to the correct project.
+
+Mestri Management: Treated as daily wage workers (flat rate), with no commission/percentage logic for now.
+
+4. Material & Expense Tracking
+Unit Tracking: Focus is on Expense (Value) rather than physical inventory counts.
+
+Vendor Debt: Material deliveries are logged as "Pending" (Debt) and settled later, similar to labor payments.
+
+Price Fluctuations: Material rates (Cement, Sand, etc.) change frequently; the app must allow manual rate entry/overrides for each delivery.
+
+5. Project Progress & Reporting
+Milestones: Standardized phases (Excavation $\rightarrow$ Footing $\rightarrow$ Plinth $\rightarrow$ Slab) applied across all sites.
+
+The "Mood-Proof" Report Center: A dedicated dashboard where the user can pick Any Date or Date Range and Any Site to generate:
+
+Daily/Weekly Labor Attendance Reports.
+
+Financial Outflow (Cash vs. UPI) Reports.
+
+Material Consumption & Milestone Status Reports.
+
+Output: Clean, printable layouts or PDFs for clients/Senior Contractors.
+
+6. Technical Architecture (The Stack)
+Backend: Google Sheets (7 structured tabs: Sites, Labor Master, Attendance, Advances, Payouts, Materials, Milestones).
+
+Frontend: AppSheet (No-code platform).
+
+User Interface: Stepper-style forms (Step-by-step entry) instead of long scrolling forms.
+
+User Access: Solo operator ("Single Man Army").
