@@ -6,29 +6,22 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS configuration for production
+// CORS configuration - allow all vercel.app domains and localhost
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        // Allow all vercel.app subdomains
-        if (origin.endsWith('.vercel.app')) {
-          return callback(null, true);
-        }
-        
-        callback(new Error('Not allowed by CORS'));
-      }
-    : ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:5173'],
+  origin: true, // Allow all origins in production (Vercel serverless compatible)
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 // Middleware
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 // Database initialization promise
 let dbInitialized = false;
