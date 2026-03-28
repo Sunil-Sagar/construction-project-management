@@ -104,10 +104,10 @@ router.post('/', (req, res) => {
   db.run(
     `INSERT INTO attendance (worker_id, site_id, date, attendance_value, ot_hours, notes) 
      VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(worker_id, site_id, date) 
-     DO UPDATE SET attendance_value = ?, ot_hours = ?, notes = ?`,
+     ON CONFLICT(worker_id, date) 
+     DO UPDATE SET site_id = ?, attendance_value = ?, ot_hours = ?, notes = ?`,
     [worker_id, site_id, date, attendance_value, ot_hours || 0, notes,
-     attendance_value, ot_hours || 0, notes],
+     site_id, attendance_value, ot_hours || 0, notes],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -128,8 +128,8 @@ router.post('/bulk', (req, res) => {
   const stmt = db.prepare(`
     INSERT INTO attendance (worker_id, site_id, date, attendance_value, ot_hours, notes)
     VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(worker_id, site_id, date)
-    DO UPDATE SET attendance_value = ?, ot_hours = ?, notes = ?
+    ON CONFLICT(worker_id, date)
+    DO UPDATE SET site_id = ?, attendance_value = ?, ot_hours = ?, notes = ?
   `);
 
   let errors = [];
@@ -147,7 +147,7 @@ router.post('/bulk', (req, res) => {
 
     stmt.run(
       [worker_id, site_id, date, attendance_value, ot_hours || 0, notes || null,
-       attendance_value, ot_hours || 0, notes || null],
+       site_id, attendance_value, ot_hours || 0, notes || null],
       (err) => {
         if (err) {
           errors.push({ index, error: err.message });
