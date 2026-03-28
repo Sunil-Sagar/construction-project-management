@@ -19,6 +19,19 @@ const SmartInput = ({
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef(null);
+  const wrapperRef = useRef(null);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleInputChange = (inputValue) => {
     onChange(inputValue);
@@ -42,6 +55,7 @@ const SmartInput = ({
   const selectSuggestion = (suggestion) => {
     onChange(suggestion);
     setShowSuggestions(false);
+    inputRef.current?.blur();
   };
 
   const handleFocus = () => {
@@ -61,13 +75,8 @@ const SmartInput = ({
     }
   };
 
-  const handleBlur = () => {
-    // Delay to allow click on suggestion
-    setTimeout(() => setShowSuggestions(false), 200);
-  };
-
   return (
-    <div className="relative">
+    <div className="relative" ref={wrapperRef}>
       {label && (
         <label className="block text-sm font-medium text-gray-700 mb-1">
           {label} {required && '*'}
@@ -81,7 +90,6 @@ const SmartInput = ({
         value={value}
         onChange={(e) => handleInputChange(e.target.value)}
         onFocus={handleFocus}
-        onBlur={handleBlur}
         className={className || "w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"}
         placeholder={placeholder}
         autoComplete="off"
