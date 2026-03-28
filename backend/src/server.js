@@ -35,6 +35,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Database initialization promise
 let dbInitialized = false;
 let dbInitPromise = null;
+let dbInitError = null;
 
 // Initialize database (PostgreSQL in production, SQLite local)
 if (process.env.DATABASE_URL) {
@@ -47,7 +48,8 @@ if (process.env.DATABASE_URL) {
     })
     .catch(err => {
       console.error('Failed to initialize PostgreSQL:', err);
-      throw err;
+      dbInitError = err;
+      // Don't throw - let middleware handle it
     });
 } else {
   // Use SQLite for local development
@@ -57,11 +59,32 @@ if (process.env.DATABASE_URL) {
 
 // Middleware to ensure database is ready before handling requests
 app.use(async (req, res, next) => {
+  // Skip health check endpoint
+  if (req.path === '/api/health') {
+    return next();
+  }
+  
+  if (dbInitError) {
+    return res.status(503).json({ 
+      error: 'Database initialization failed', 
+      details: dbInitError.message 
+    });
+  }
+  
   if (!dbInitialized && dbInitPromise) {
     try {
       await dbInitPromise;
+      if (dbInitError) {
+        return res.status(503).json({ 
+          error: 'Database initialization failed', 
+          details: dbInitError.message 
+        });
+      }
     } catch (err) {
-      return res.status(503).json({ error: 'Database initialization failed' });
+      return res.status(503).json({ 
+        error: 'Database initialization failed',
+        details: err.message
+      });
     }
   }
   next();

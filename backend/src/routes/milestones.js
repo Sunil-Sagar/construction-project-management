@@ -85,12 +85,7 @@ router.put('/:id', (req, res) => {
   });
 });
 
-// Initialize milestones for a site (create all 4 phases)
-router.post('/initialize/:site_id', (req, res) => {
-  const phases = ['Excavation', 'Footing', 'Plinth', 'Slab'];
-  const stmt = db.prepare(`
-    INSERT OR IGNORE INTO milestones (site_id, phase, status)
-    VALUES (?, ?, 'not-started')phases based on provided list)
+// Initialize milestones for a site (create phases based on provided list)
 router.post('/initialize/:site_id', (req, res) => {
   const { phases } = req.body;
   
@@ -102,6 +97,15 @@ router.post('/initialize/:site_id', (req, res) => {
     INSERT INTO milestones (site_id, phase, status)
     VALUES (?, ?, 'not-started')
     ON CONFLICT(site_id, phase) DO NOTHING
+  `);
+
+  phases.forEach(phase => {
+    stmt.run([req.params.site_id, phase], (err) => {
+      if (err) {
+        console.error('Error inserting milestone:', err);
+      }
+    });
+  });
 
   stmt.finalize((err) => {
     if (err) {
