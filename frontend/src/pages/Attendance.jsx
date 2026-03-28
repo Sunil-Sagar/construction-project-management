@@ -75,34 +75,7 @@ const Attendance = () => {
   };
 
   const handleEdit = (record) => {
-
-    // If editing a single record, use the update API
-    if (editingRecord) {
-      const workerData = bulkData[editingRecord.worker_id];
-      if (!workerData?.present || !workerData?.site_id) {
-        alert('Please select a site for the worker');
-        return;
-      }
-
-      try {
-        await attendanceApi.update(editingRecord.id, {
-          site_id: parseInt(workerData.site_id),
-          attendance_value: parseFloat(workerData.attendance_value) || 1.0,
-          ot_hours: parseFloat(workerData.ot_hours) || 0,
-          notes: workerData.notes || null
-        });
-        setModalOpen(false);
-        setEditingRecord(null);
-        loadAttendance();
-        return;
-      } catch (error) {
-        console.error('Failed to update attendance:', error);
-        alert('Failed to update attendance');
-        return;
-      }
-    }
-
-    // Bulk create/update
+    // Pre-populate the form with the single record data
     setEditingRecord(record);
     // Pre-populate the form with the single record data
     const data = {};
@@ -131,6 +104,34 @@ const Attendance = () => {
 
   const handleBulkSubmit = async (e) => {
     e.preventDefault();
+    
+    // If editing a single record, use the update API
+    if (editingRecord) {
+      const workerData = bulkData[editingRecord.worker_id];
+      if (!workerData?.present || !workerData?.site_id) {
+        alert('Please select a site for the worker');
+        return;
+      }
+
+      try {
+        await attendanceApi.update(editingRecord.id, {
+          site_id: parseInt(workerData.site_id),
+          attendance_value: parseFloat(workerData.attendance_value) || 1.0,
+          ot_hours: parseFloat(workerData.ot_hours) || 0,
+          notes: workerData.notes || null
+        });
+        setModalOpen(false);
+        setEditingRecord(null);
+        loadAttendance();
+        return;
+      } catch (error) {
+        console.error('Failed to update attendance:', error);
+        alert('Failed to update attendance');
+        return;
+      }
+    }
+    
+    // Bulk create/update
     const records = Object.entries(bulkData)
       .filter(([_, data]) => data.present)
       .map(([worker_id, data]) => ({
