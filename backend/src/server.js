@@ -5,7 +5,19 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
+// CRITICAL: Set CORS headers FIRST before any other middleware (Vercel serverless compatible)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 // CORS configuration - allow all vercel.app domains and localhost
 const corsOptions = {
   origin: true, // Allow all origins in production (Vercel serverless compatible)
@@ -19,9 +31,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// Handle preflight requests explicitly
-app.options('*', cors(corsOptions));
 
 // Database initialization promise
 let dbInitialized = false;
