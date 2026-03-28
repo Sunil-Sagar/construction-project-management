@@ -13,6 +13,7 @@ const Attendance = () => {
   const [selectedSite, setSelectedSite] = useState('');
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [bulkData, setBulkData] = useState({});
 
   useEffect(() => {
@@ -57,6 +58,7 @@ const Attendance = () => {
   };
 
   const openBulkModal = () => {
+    setEditingRecord(null);
     const data = {};
     workers.forEach(worker => {
       const existing = attendance.find(a => a.worker_id === worker.id);
@@ -67,6 +69,61 @@ const Attendance = () => {
         ot_hours: existing?.ot_hours || 0,
         notes: existing?.notes || ''
       };
+    });
+    setBulkData(data);
+    setModalOpen(true);
+  };
+
+  const handleEdit = (record) => {
+
+    // If editing a single record, use the update API
+    if (editingRecord) {
+      const workerData = bulkData[editingRecord.worker_id];
+      if (!workerData?.present || !workerData?.site_id) {
+        alert('Please select a site for the worker');
+        return;
+      }
+
+      try {
+        await attendanceApi.update(editingRecord.id, {
+          site_id: parseInt(workerData.site_id),
+          attendance_value: parseFloat(workerData.attendance_value) || 1.0,
+          ot_hours: parseFloat(workerData.ot_hours) || 0,
+          notes: workerData.notes || null
+        });
+        setModalOpen(false);
+        setEditingRecord(null);
+        loadAttendance();
+        return;
+      } catch (error) {
+        console.error('Failed to update attendance:', error);
+        alert('Failed to update attendance');
+        return;
+      }
+    }
+
+    // Bulk create/update
+    setEditingRecord(record);
+    // Pre-populate the form with the single record data
+    const data = {};
+    workers.forEach(worker => {
+      if (worker.id === record.worker_id) {
+        data[worker.id] = {
+          present: true,
+          site_id: record.site_id,
+          attendance_value: record.attendance_value,
+          ot_hours: record.ot_hours || 0,
+          notes: record.notes || ''
+        };
+      } else {
+        data[worker.id] = {
+          present: false,
+          site_id: '',
+          attendance_value: 1.0,
+          ot_hours: 0,
+          notes: ''
+        };
+      }
     });
     setBulkData(data);
     setModalOpen(true);
@@ -149,9 +206,14 @@ const Attendance = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Site</th>
+                <tr>div className="flex justify-end gap-2">
+                        <button onClick={() => handleEdit(record)} className="text-primary-600 hover:text-primary-900">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(record.id)} className="text-red-600 hover:text-red-900">
+                          Delete
+                        </button>
+                      </dive="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Site</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">OT Hours</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
@@ -184,19 +246,16 @@ const Attendance = () => {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={`Mark Attendance - ${selectedDate}`}>
+            </table>{ setModalOpen(false); setEditingRecord(null); }} title={editingRecord ? 'Edit Attendance' : `Mark Attendance - ${selectedDate}`}>
         <form onSubmit={handleBulkSubmit} className="space-y-4">
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>💡 Tip:</strong> For workers at multiple sites, mark them as "Half day" at each site separately. 
-              Example: 0.5 days at Site A + 0.5 days at Site B = 1 full day total.
-            </p>
-          </div>
+          {!editingRecord && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Tip:</strong> For workers at multiple sites, mark them as "Half day" at each site separately. 
+                Example: 0.5 days at Site A + 0.5 days at Site B = 1 full day total.
+              </p>
+            </div>
+          )}
           <div className="max-h-96 overflow-y-auto space-y-3">
             {workers.map((worker) => (
               <div key={worker.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
@@ -207,7 +266,8 @@ const Attendance = () => {
                     ...bulkData,
                     [worker.id]: { ...bulkData[worker.id], present: e.target.checked }
                   })}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  disabled={editingRecord && worker.id !== editingRecord.worker_id}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded disabled:opacity-50"
                 />
                 <div className="flex-1">
                   <div className="font-medium text-gray-900">{worker.name}</div>
@@ -258,6 +318,11 @@ const Attendance = () => {
               </div>
             ))}
           </div>
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); setEditingRecord(null); }}>
+              Cancel
+            </Button>
+            <Button type="submit">{editingRecord ? 'Update' : 'Save'}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
               Cancel
