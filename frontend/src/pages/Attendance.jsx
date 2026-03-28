@@ -207,14 +207,9 @@ const Attendance = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
-                <tr>div className="flex justify-end gap-2">
-                        <button onClick={() => handleEdit(record)} className="text-primary-600 hover:text-primary-900">
-                          Edit
-                        </button>
-                        <button onClick={() => handleDelete(record.id)} className="text-red-600 hover:text-red-900">
-                          Delete
-                        </button>
-                      </dive="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Site</th>
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Site</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">OT Hours</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
@@ -240,14 +235,24 @@ const Attendance = () => {
                       {record.notes || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button onClick={() => handleDelete(record.id)} className="text-red-600 hover:text-red-900">
-                        Delete
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => handleEdit(record)} className="text-primary-600 hover:text-primary-900">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(record.id)} className="text-red-600 hover:text-red-900">
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>{ setModalOpen(false); setEditingRecord(null); }} title={editingRecord ? 'Edit Attendance' : `Mark Attendance - ${selectedDate}`}>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditingRecord(null); }} title={editingRecord ? 'Edit Attendance' : `Mark Attendance - ${selectedDate}`}>
         <form onSubmit={handleBulkSubmit} className="space-y-4">
           {!editingRecord && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -323,12 +328,7 @@ const Attendance = () => {
             <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); setEditingRecord(null); }}>
               Cancel
             </Button>
-            <Button type="submit">{editingRecord ? 'Update' : 'Save'}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">Save Attendance</Button>
+            <Button type="submit">{editingRecord ? 'Update' : 'Save Attendance'}</Button>
           </div>
         </form>
       </Modal>
