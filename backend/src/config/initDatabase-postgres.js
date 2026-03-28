@@ -151,12 +151,49 @@ const initPostgresDatabase = async () => {
 
     console.log('✓ All PostgreSQL tables created successfully');
 
+    // Run migrations for existing tables
+    await runMigrations();
+
     // Insert default materials
     await insertDefaultData();
 
   } catch (error) {
     console.error('Error creating PostgreSQL tables:', error.message);
     throw error;
+  }
+};
+
+const runMigrations = async () => {
+  try {
+    console.log('Running database migrations...');
+
+    // Migration: Add missing columns to milestones table
+    try {
+      await sql`ALTER TABLE milestones ADD COLUMN IF NOT EXISTS actual_completion_date DATE`;
+      await sql`ALTER TABLE milestones ADD COLUMN IF NOT EXISTS original_status VARCHAR(50)`;
+      console.log('✓ Milestones table columns migrated');
+    } catch (err) {
+      console.log('Note: Milestones columns may already exist');
+    }
+
+    // Migration: Remove restrictive phase CHECK constraint
+    try {
+      await sql`ALTER TABLE milestones DROP CONSTRAINT IF EXISTS milestones_phase_check`;
+      console.log('✓ Removed restrictive phase constraint');
+    } catch (err) {
+      console.log('Note: Phase constraint may not exist');
+    }
+
+    // Migration: Increase phase column size
+    try {
+      await sql`ALTER TABLE milestones ALTER COLUMN phase TYPE VARCHAR(100)`;
+      console.log('✓ Increased phase column size');
+    } catch (err) {
+      console.log('Note: Phase column may already be correct size');
+    }
+
+  } catch (error) {
+    console.log('Migration warnings (non-critical):', error.message);
   }
 };
 
