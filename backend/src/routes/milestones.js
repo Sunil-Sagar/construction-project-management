@@ -5,7 +5,7 @@ const db = require('../config/database');
 // Get milestones for a specific site
 router.get('/site/:site_id', (req, res) => {
   db.all(
-    'SELECT * FROM milestones WHERE site_id = ? ORDER BY CASE phase WHEN "Excavation" THEN 1 WHEN "Footing" THEN 2 WHEN "Plinth" THEN 3 WHEN "Slab" THEN 4 END',
+    'SELECT * FROM milestones WHERE site_id = ? ORDER BY created_at',
     [req.params.site_id],
     (err, rows) => {
       if (err) {
@@ -24,12 +24,7 @@ router.get('/', (req, res) => {
       s.name as site_name
     FROM milestones m
     JOIN sites s ON m.site_id = s.id
-    ORDER BY s.name, CASE m.phase 
-      WHEN 'Excavation' THEN 1 
-      WHEN 'Footing' THEN 2 
-      WHEN 'Plinth' THEN 3 
-      WHEN 'Slab' THEN 4 
-    END
+    ORDER BY s.name, m.created_at
   `;
   
   db.all(query, [], (err, rows) => {
@@ -95,12 +90,18 @@ router.post('/initialize/:site_id', (req, res) => {
   const phases = ['Excavation', 'Footing', 'Plinth', 'Slab'];
   const stmt = db.prepare(`
     INSERT OR IGNORE INTO milestones (site_id, phase, status)
-    VALUES (?, ?, 'not-started')
-  `);
+    VALUES (?, ?, 'not-started')phases based on provided list)
+router.post('/initialize/:site_id', (req, res) => {
+  const { phases } = req.body;
+  
+  if (!phases || !Array.isArray(phases) || phases.length === 0) {
+    return res.status(400).json({ error: 'Phases array is required' });
+  }
 
-  phases.forEach(phase => {
-    stmt.run([req.params.site_id, phase]);
-  });
+  const stmt = db.prepare(`
+    INSERT INTO milestones (site_id, phase, status)
+    VALUES (?, ?, 'not-started')
+    ON CONFLICT(site_id, phase) DO NOTHING
 
   stmt.finalize((err) => {
     if (err) {

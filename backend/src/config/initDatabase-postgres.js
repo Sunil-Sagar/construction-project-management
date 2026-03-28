@@ -136,10 +136,12 @@ const initPostgresDatabase = async () => {
       CREATE TABLE IF NOT EXISTS milestones (
         id SERIAL PRIMARY KEY,
         site_id INTEGER NOT NULL,
-        phase VARCHAR(50) NOT NULL CHECK(phase IN ('Excavation', 'Footing', 'Plinth', 'Slab')),
+        phase VARCHAR(100) NOT NULL,
         status VARCHAR(50) DEFAULT 'not-started' CHECK(status IN ('not-started', 'in-progress', 'completed')),
         start_date DATE,
         completion_date DATE,
+        actual_completion_date DATE,
+        original_status VARCHAR(50),
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE CASCADE,
