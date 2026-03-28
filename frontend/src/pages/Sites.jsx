@@ -28,7 +28,8 @@ const Sites = () => {
       setSites(response.data);
     } catch (error) {
       console.error('Error loading sites:', error);
-      alert('Failed to load sites');
+      const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message || 'Unknown error';
+      alert(`Failed to load sites: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
